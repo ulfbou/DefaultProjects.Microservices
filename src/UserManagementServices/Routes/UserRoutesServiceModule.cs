@@ -3,7 +3,7 @@ using DefaultProjects.Shared.Interfaces;
 
 namespace DefaultProjects.Microservices.UserManagementServices.Routes;
 
-public class UserRoutesModule : Module<IMiddlewareConfigurator>
+public class UserRoutesServiceModule : Module<IMiddlewareConfigurator>
 {
     public void Configure(IServiceConfigurator configurator)
     {

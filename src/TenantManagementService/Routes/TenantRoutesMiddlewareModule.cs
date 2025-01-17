@@ -1,5 +1,4 @@
-﻿using DefaultProjects.Microservices.TenantManagementServices.Services;
-using DefaultProjects.Shared.DTOs;
+﻿using DefaultProjects.Shared.DTOs;
 using DefaultProjects.Shared.Interfaces;
 
 using FluentInjections;
@@ -8,18 +7,8 @@ using System.Text.Json;
 
 namespace DefaultProjects.Microservices.TenantManagementServices.Routes;
 
-public class TenantServiceRoutesModule : Module<IServiceConfigurator>
+public class TenantRoutesMiddlewareModule : Module<IMiddlewareConfigurator>
 {
-    public override void Configure(IServiceConfigurator configurator)
-    {
-        configurator.Services.AddSingleton<ITenantService, TenantService>();
-        configurator.Services.AddRouting();
-    }
-}
-
-public class TenantMiddlewareRoutesModule : Module<IMiddlewareConfigurator>
-{
-
     public override void Configure(IMiddlewareConfigurator configurator)
     {
         var app = configurator.Application;
