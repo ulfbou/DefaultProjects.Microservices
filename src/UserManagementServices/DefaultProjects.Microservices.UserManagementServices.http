@@ -1,0 +1,6 @@
+@DefaultProjects.Microservices.UserManagementServices_HostAddress = http://localhost:5154
+
+GET {{DefaultProjects.Microservices.UserManagementServices_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

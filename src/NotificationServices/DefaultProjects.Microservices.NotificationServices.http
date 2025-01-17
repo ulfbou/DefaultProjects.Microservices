@@ -1,0 +1,6 @@
+@DefaultProjects.Microservices.NotificationServices_HostAddress = http://localhost:5056
+
+GET {{DefaultProjects.Microservices.NotificationServices_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
