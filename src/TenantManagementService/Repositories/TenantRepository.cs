@@ -30,13 +30,17 @@ public class TenantRepository<TContext> : ITenantRepository where TContext : DbC
         {
             try
             {
+
                 var existingTenant = await _context.Set<Tenant>().FindAsync(new object[] { tenant.TenantId }, cancellationToken);
                 if (existingTenant != null)
                 {
                     _logger.LogInformation("Tenant Id {TenantId} already exists", tenant.TenantId);
                     return;
                 }
-
+         _context.Entry(tenant).Property("RowVersion").OriginalValue = tenant.RowVersion;
+            _context.Set<Tenant>().Update(tenant);
+            await _context.SaveChangesAsync(cancellationToken);
+            scope.Complete();
                 _context.Set<Tenant>().Add(tenant);
                 await _context.SaveChangesAsync(cancellationToken);
                 scope.Complete();
