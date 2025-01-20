@@ -1,11 +1,10 @@
-﻿using DefaultProjects.Shared.Extensions;
+using DefaultProjects.Shared.Extensions;
 using DefaultProjects.Shared.Interfaces;
 using DefaultProjects.Shared.Models;
 using DefaultProjects.Shared.Options;
-
 using FluentInjections.Validation;
-
 using Microsoft.EntityFrameworkCore;
+using System.Transactions;
 
 namespace DefaultProjects.Microservices.TenantManagementServices.Repositories;
 
@@ -26,19 +25,27 @@ public class TenantRepository<TContext> : ITenantRepository where TContext : DbC
         Guard.NotNull(cancellationToken, nameof(cancellationToken));
 
         _logger.LogInformation("Creating Tenant Id {TenantId}", tenant.TenantId);
-        try
+
+        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            using (var transaction = _context.Database.BeginTransaction())
+            try
             {
+                var existingTenant = await _context.Set<Tenant>().FindAsync(new object[] { tenant.TenantId }, cancellationToken);
+                if (existingTenant != null)
+                {
+                    _logger.LogInformation("Tenant Id {TenantId} already exists", tenant.TenantId);
+                    return;
+                }
+
                 _context.Set<Tenant>().Add(tenant);
                 await _context.SaveChangesAsync(cancellationToken);
-                transaction.Commit();
+                scope.Complete();
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create Tenant Id {TenantId}", tenant.TenantId);
-            throw;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create Tenant Id {TenantId}", tenant.TenantId);
+                throw;
+            }
         }
     }
 
@@ -49,28 +56,27 @@ public class TenantRepository<TContext> : ITenantRepository where TContext : DbC
 
         _logger.LogInformation("Deleting tenant Id {TenantId}", tenantId);
 
-        try
+        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            using (var transaction = _context.Database.BeginTransaction())
+            try
             {
                 var tenant = await TryGetAsync(tenantId: tenantId, RepositoryOptions.Default, cancellationToken: cancellationToken);
 
                 if (tenant is null)
                 {
                     _logger.LogWarning("Tenant Id {TenantId} not found", tenantId);
-                    transaction.Rollback();
                     return;
                 }
 
                 _context.Set<Tenant>().Remove(tenant);
                 await _context.SaveChangesAsync(cancellationToken);
-                transaction.Commit();
+                scope.Complete();
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete Tenant Id {TenantId}", tenantId);
-            throw;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete Tenant Id {TenantId}", tenantId);
+                throw;
+            }
         }
     }
 
@@ -105,19 +111,25 @@ public class TenantRepository<TContext> : ITenantRepository where TContext : DbC
 
         _logger.LogInformation("Updating Tenant Id {TenantId}", tenant.TenantId);
 
-        try
+        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            using (var transaction = _context.Database.BeginTransaction())
+            try
             {
+                _context.Entry(tenant).Property("RowVersion").OriginalValue = tenant.RowVersion;
                 _context.Set<Tenant>().Update(tenant);
                 await _context.SaveChangesAsync(cancellationToken);
-                transaction.Commit();
+                scope.Complete();
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to update Tenant Id {TenantId}", tenant.TenantId);
-            throw;
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogError(ex, "Concurrency conflict when updating Tenant Id {TenantId}", tenant.TenantId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update Tenant Id {TenantId}", tenant.TenantId);
+                throw;
+            }
         }
     }
 }
