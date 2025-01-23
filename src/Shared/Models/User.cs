@@ -9,6 +9,7 @@ public class User : ITenantEntity
     public required string PasswordHash { get; set; }
     public required string Roles { get; set; }
     public required string TenantId { get; set; }
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     public string Id => UserId;
 }
