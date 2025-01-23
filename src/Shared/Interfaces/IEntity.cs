@@ -1,6 +1,6 @@
-﻿namespace DefaultProjects.Shared.Interfaces;
+﻿// Copyright (c) DefaultProjects. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
 
-public interface IEntity
-{
-    string Id { get; }
-}
+namespace DefaultProjects.Shared.Interfaces;
+
+public interface IEntity : IEntity<string> { }

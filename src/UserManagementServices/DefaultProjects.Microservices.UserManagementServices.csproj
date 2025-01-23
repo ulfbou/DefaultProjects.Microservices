@@ -1,24 +1,25 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="13.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="AutoMapper" Version="13.0.1" />
+		<PackageReference Include="FluentInjections" Version="0.0.2-beta" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Shared\DefaultProjects.Shared.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Shared\DefaultProjects.Shared.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="FluentInjections.Validation">
-      <HintPath>..\..\..\FluentInjections\src\Validation\obj\Debug\net9.0\ref\FluentInjections.Validation.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<ItemGroup>
+		<Reference Include="FluentInjections.Validation">
+			<HintPath>..\..\..\FluentInjections\src\Validation\obj\Debug\net9.0\ref\FluentInjections.Validation.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
 </Project>

@@ -1,4 +1,7 @@
-﻿using DefaultProjects.Shared.Extensions;
+﻿// Copyright (c) DefaultProjects. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
+
+using DefaultProjects.Shared.Extensions;
 using DefaultProjects.Shared.Interfaces;
 using DefaultProjects.Shared.Models;
 using DefaultProjects.Shared.Options;
@@ -8,16 +11,21 @@ using FluentInjections.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using System.Transactions;
+
 namespace DefaultProjects.Shared.Repositories;
 
-public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext : DbContext where TEntity : class, ITenantEntity
+public class Repository<TContext, TEntity, TKey> : IRepository<TEntity, TKey> where TContext : DbContext
+    where TEntity : class, ITenantEntity<TKey>
+    where TKey : notnull, IEquatable<TKey>
 {
     private readonly TContext _context;
-    private readonly ILogger<Repository<TContext, TEntity>> _logger;
+    private readonly ILogger<Repository<TContext, TEntity, TKey>> _logger;
     private readonly string _entityName;
 
-    public Repository(TContext context, ILogger<Repository<TContext, TEntity>> logger)
+    public Repository(TContext context, ILogger<Repository<TContext, TEntity, TKey>> logger)
     {
+        Tenant t;
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _entityName = typeof(TEntity).Name;
@@ -66,22 +74,21 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(string tenantId, string id, CancellationToken cancellationToken)
+    public async Task DeleteAsync(string tenantId, TKey id, CancellationToken cancellationToken)
     {
         Guard.NotNullOrEmpty(tenantId, nameof(tenantId));
-        Guard.NotNullOrEmpty(id, nameof(id));
         Guard.NotNull(cancellationToken, nameof(cancellationToken));
 
-        ValidateTenant(tenantId, id);
         _logger.LogInformation("Deleting {EntityName} Id {Id} with TenantId {TenantId}", _entityName, id, tenantId);
 
         await ExecuteWithinTransactionAsync(DeleteEntityAsync, (tenantId, id), cancellationToken);
     }
 
-    private async Task DeleteEntityAsync((string tenantId, string id) parameters, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync((string tenantId, TKey id) parameters, CancellationToken cancellationToken)
     {
         var (tenantId, id) = parameters;
-        var entity = await TryGetAsync(tenantId, id, RepositoryOptions.Default, cancellationToken);
+        var options = RepositoryOptions<TEntity, TKey>.Default with { DisableTracking = true };
+        var entity = await TryGetAsync(tenantId, id, options, cancellationToken: cancellationToken);
 
         if (entity is null)
         {
@@ -93,13 +100,12 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<TEntity?> TryGetAsync(string tenantId, string id, RepositoryOptions? options, CancellationToken cancellationToken)
+    public async Task<TEntity?> TryGetAsync(string tenantId, TKey id, RepositoryOptions<TEntity, TKey>? options, CancellationToken cancellationToken)
     {
         Guard.NotNullOrEmpty(tenantId, nameof(tenantId));
         Guard.NotNull(cancellationToken, nameof(cancellationToken));
 
-        ValidateTenant(tenantId, id);
-        options ??= RepositoryOptions.Default;
+        options ??= RepositoryOptions<TEntity, TKey>.Default;
 
         _logger.LogInformation("Getting {EntityName} Id {Id} with TenantId {TenantId}", _entityName, id, tenantId);
 
@@ -109,7 +115,7 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
                                 .AsQueryable()
                                 .ApplyOptions(options);
 
-            return await query.FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId, cancellationToken);
+            return await query.FirstOrDefaultAsync(e => e.Id.Equals(id) && e.TenantId == tenantId, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {

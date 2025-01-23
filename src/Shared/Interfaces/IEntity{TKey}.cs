@@ -6,4 +6,5 @@ namespace DefaultProjects.Shared.Interfaces;
 public interface IEntity<TKey> where TKey : notnull, IEquatable<TKey>
 {
     TKey Id { get; }
+    byte[] RowVersion { get; set; }
 }

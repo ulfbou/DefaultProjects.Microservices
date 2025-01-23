@@ -58,7 +58,7 @@ namespace DefaultProjects.Microservices.TenantManagementServices.Services
                 cancellationToken);
         }
 
-        public async Task<Tenant?> UpdateAsync(string tenantId, TenantCreationDTO tenantDto, CancellationToken cancellationToken)
+        public async Task<Tenant?> UpdateAsync(string tenantId, TenantUpdateDTO tenantDto, CancellationToken cancellationToken)
         {
             Guard.NotNullOrEmpty(tenantId, nameof(tenantId));
             Guard.NotNull(tenantDto, nameof(tenantDto));

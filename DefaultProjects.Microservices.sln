@@ -19,6 +19,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefaultProjects.Microservic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefaultProjects.Microservices.NotificationServices", "src\NotificationServices\DefaultProjects.Microservices.NotificationServices.csproj", "{617059DD-81B5-4C19-9404-7C7729BD0B09}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentInjections.Validation", "..\FluentInjections\src\Validation\FluentInjections.Validation.csproj", "{DCE82B83-F978-4CCA-B045-F721D2906E5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentInjections.Extensions", "..\FluentInjections\src\Extensions\FluentInjections.Extensions.csproj", "{80B77319-AF6E-4EEB-86DB-33E3E21974BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +57,14 @@ Global
 		{617059DD-81B5-4C19-9404-7C7729BD0B09}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{617059DD-81B5-4C19-9404-7C7729BD0B09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{617059DD-81B5-4C19-9404-7C7729BD0B09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCE82B83-F978-4CCA-B045-F721D2906E5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCE82B83-F978-4CCA-B045-F721D2906E5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCE82B83-F978-4CCA-B045-F721D2906E5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCE82B83-F978-4CCA-B045-F721D2906E5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80B77319-AF6E-4EEB-86DB-33E3E21974BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80B77319-AF6E-4EEB-86DB-33E3E21974BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80B77319-AF6E-4EEB-86DB-33E3E21974BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80B77319-AF6E-4EEB-86DB-33E3E21974BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
