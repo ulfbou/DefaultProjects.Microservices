@@ -54,7 +54,7 @@ namespace DefaultProjects.Microservices.TenantManagementServices.Services
 
             return await _tenantRepository.TryGetAsync(
                 tenantId,
-                RepositoryOptions.Default,
+                RepositoryOptions<Tenant, string>.Default,
                 cancellationToken);
         }
 
@@ -66,7 +66,7 @@ namespace DefaultProjects.Microservices.TenantManagementServices.Services
 
             var tenant = await _tenantRepository.TryGetAsync(
                 tenantId,
-                RepositoryOptions.Default with { UseAsTracking = true },
+                RepositoryOptions<Tenant, string>.Default with { UseAsTracking = true },
                 cancellationToken);
 
             if (tenant is null)
