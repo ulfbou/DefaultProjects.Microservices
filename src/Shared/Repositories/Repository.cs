@@ -23,6 +23,23 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
         _entityName = typeof(TEntity).Name;
     }
 
+    protected async Task ExecuteWithinTransactionAsync<TParameter>(Func<TParameter, CancellationToken, Task> action, TParameter parameter, CancellationToken cancellationToken)
+    {
+        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+        {
+            try
+            {
+                await action(parameter, cancellationToken);
+                scope.Complete();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Transaction failed");
+                throw;
+            }
+        }
+    }
+
     public async Task CreateAsync(string tenantId, TEntity entity, CancellationToken cancellationToken)
     {
         Guard.NotNullOrEmpty(tenantId, nameof(tenantId));
@@ -32,20 +49,21 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
         ValidateTenant(tenantId, entity);
         _logger.LogInformation("Creating {EntityName} Id {EntityId} with TenantId {TenantId}", _entityName, entity.Id, tenantId);
 
-        try
+        await ExecuteWithinTransactionAsync(CreateEntityAsync, (tenantId, entity), cancellationToken);
+    }
+
+    private async Task CreateEntityAsync((string tenantId, TEntity entity) parameters, CancellationToken cancellationToken)
+    {
+        var (tenantId, entity) = parameters;
+        var existingEntity = await _context.Set<TEntity>().FindAsync(new object[] { entity.Id }, cancellationToken);
+        if (existingEntity != null)
         {
-            using (var transaction = _context.Database.BeginTransaction())
-            {
-                _context.Set<TEntity>().Add(entity);
-                await _context.SaveChangesAsync(cancellationToken);
-                transaction.Commit();
-            }
+            _logger.LogInformation("{EntityName} Id {EntityId} already exists with TenantId {TenantId}", _entityName, entity.Id, tenantId);
+            return;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create {EntityName} Id {EntityId} with TenantId {TenantId}", _entityName, entity.Id, tenantId);
-            throw;
-        }
+
+        _context.Set<TEntity>().Add(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(string tenantId, string id, CancellationToken cancellationToken)
@@ -57,29 +75,22 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
         ValidateTenant(tenantId, id);
         _logger.LogInformation("Deleting {EntityName} Id {Id} with TenantId {TenantId}", _entityName, id, tenantId);
 
-        try
-        {
-            using (var transaction = _context.Database.BeginTransaction())
-            {
-                var TEntity = await TryGetAsync(tenantId, id, RepositoryOptions.Default, cancellationToken: cancellationToken);
+        await ExecuteWithinTransactionAsync(DeleteEntityAsync, (tenantId, id), cancellationToken);
+    }
 
-                if (TEntity is null)
-                {
-                    _logger.LogWarning("{EntityName} {Id} with TenantId {TenantId} not found", _entityName, id, tenantId);
-                    transaction.Rollback();
-                    return;
-                }
+    private async Task DeleteEntityAsync((string tenantId, string id) parameters, CancellationToken cancellationToken)
+    {
+        var (tenantId, id) = parameters;
+        var entity = await TryGetAsync(tenantId, id, RepositoryOptions.Default, cancellationToken);
 
-                _context.Set<TEntity>().Remove(TEntity);
-                await _context.SaveChangesAsync(cancellationToken);
-                transaction.Commit();
-            }
-        }
-        catch (Exception ex)
+        if (entity is null)
         {
-            _logger.LogError(ex, "Failed to delete {EntityName} Id {Id} with TenantId {TenantId}", _entityName, id, tenantId);
-            throw;
+            _logger.LogWarning("{EntityName} {Id} with TenantId {TenantId} not found", _entityName, id, tenantId);
+            return;
         }
+
+        _context.Set<TEntity>().Remove(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<TEntity?> TryGetAsync(string tenantId, string id, RepositoryOptions? options, CancellationToken cancellationToken)
@@ -98,7 +109,7 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
                                 .AsQueryable()
                                 .ApplyOptions(options);
 
-            return await query.FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId, cancellationToken: cancellationToken);
+            return await query.FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -115,20 +126,15 @@ public class Repository<TContext, TEntity> : IRepository<TEntity> where TContext
         ValidateTenant(tenantId, entity);
         _logger.LogInformation("Updating {EntityName} Id {EntityId} with TenantId {TenantId}", _entityName, entity.Id, tenantId);
 
-        try
-        {
-            using (var transaction = await _context.Database.BeginTransactionAsync(cancellationToken))
-            {
-                _context.Set<TEntity>().Update(entity);
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to update {EntityName} Id {EntityId} with TenantId {TenantId}", _entityName, entity.Id, tenantId);
-            throw;
-        }
+        await ExecuteWithinTransactionAsync(UpdateEntityAsync, (tenantId, entity), cancellationToken);
+    }
+
+    private async Task UpdateEntityAsync((string tenantId, TEntity entity) parameters, CancellationToken cancellationToken)
+    {
+        var (tenantId, entity) = parameters;
+        _context.Entry(entity).Property("RowVersion").OriginalValue = entity.RowVersion;
+        _context.Set<TEntity>().Update(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
