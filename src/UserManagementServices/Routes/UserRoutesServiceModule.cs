@@ -1,13 +1,18 @@
 ﻿using DefaultProjects.Microservices.UserManagementServices.Services;
 using DefaultProjects.Shared.Interfaces;
 
-namespace DefaultProjects.Microservices.UserManagementServices.Routes;
+using FluentInjections;
 
-public class UserRoutesServiceModule : Module<IMiddlewareConfigurator>
+namespace DefaultProjects.Microservices.UserManagementServices.Routes
 {
-    public void Configure(IServiceConfigurator configurator)
+    public class UserRoutesServiceModule : Module<IServiceConfigurator>
     {
-        configurator.Services.AddSingleton<IUserManagementService, UserManagementService>();
-        configurator.Services.AddRouting();
+        public override void Configure(IServiceConfigurator configurator)
+        {
+            configurator.Bind<IUserManagementService>()
+                        .To<UserManagementService>()
+                        .AsSingleton();
+            configurator.Services.AddRouting();
+        }
     }
 }
